@@ -9,6 +9,8 @@ GitHub OAuth supports both the web application flow and the device flow. Use a *
 
 ## Register a GitHub App
 
+<!-- markdownlint-disable MD029 -->
+
 1. Go to [GitHub Developer Settings](https://github.com/settings/apps/new) and create a new **GitHub App**.
 2. Set **GitHub App name**, **Homepage URL**, **Description**, and **Callback URL**.
 

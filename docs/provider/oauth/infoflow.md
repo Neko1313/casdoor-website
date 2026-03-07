@@ -5,6 +5,8 @@ keywords: [Infoflow, OAuth, Baidu]
 authors: [Steve0x2a]
 ---
 
+<!-- markdownlint-disable MD029 -->
+
 1. Log in at [Infoflow](http://id.qy.baidu.com/static/ge/login.html#/) and open [Infoflow applications](http://qy.baidu.com/index.html#applist).
 2. Register an application and note the **AgentID**.
 3. In the **Setting** tab, create a management group. In address book permissions, add your structure and grant the app the needed permissions; add the app to the specified location. Add the required sensitive interface permissions.

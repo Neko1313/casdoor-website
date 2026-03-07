@@ -5,6 +5,8 @@ keywords: [Gitee, OAuth]
 authors: [ErikQQY]
 ---
 
+<!-- markdownlint-disable MD029 -->
+
 1. Go to [Gitee OAuth applications](https://gitee.com/oauth/applications) and create an application (or open an existing one).
 
 ![Gitee Workbench](/img/providers/OAuth/giteebench.png)

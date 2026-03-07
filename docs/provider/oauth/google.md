@@ -9,6 +9,8 @@ Configure Google OAuth in the [Google API Console](https://console.developers.go
 
 ## Configure in Google Cloud
 
+<!-- markdownlint-disable MD029 -->
+
 1. Create or select a project. Open **APIs & Services** → **OAuth consent screen** and configure the consent screen.
 2. Go to **Credentials** → **Create credentials** → **OAuth client ID**. Choose application type (e.g. Web application) and set **Authorized redirect URIs**.
 

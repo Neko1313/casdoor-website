@@ -5,6 +5,8 @@ keywords: [Azure AD, Azure, OAuth]
 authors: [leo220yuyaodog]
 ---
 
+<!-- markdownlint-disable MD029 -->
+
 **Azure Active Directory (Azure AD)** provides a single identity for cloud and on-premises apps. Use it as an OAuth provider in Casdoor so users can sign in with their Microsoft accounts.
 
 ## Register an application

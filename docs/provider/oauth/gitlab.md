@@ -9,6 +9,8 @@ Use the [GitLab Applications](https://gitlab.com/-/profile/applications) page (o
 
 ## Create the GitLab application
 
+<!-- markdownlint-disable MD029 -->
+
 1. Click **Add new application**.
 2. Set **Name** (e.g. "Casdoor"), **Redirect URI**, and **Scopes**.
 

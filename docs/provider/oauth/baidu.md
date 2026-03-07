@@ -5,6 +5,8 @@ keywords: [Baidu, Baidu OAuth]
 authors: [Steve0x2a]
 ---
 
+<!-- markdownlint-disable MD029 -->
+
 1. Read [Baidu Open Auth](https://openauth.baidu.com/doc/regdevelopers.html?qq-pf-to=pcqq.c2c) and [create an application](http://developer.baidu.com/console#app/create).
 
 ![Create Baidu APP](/img/providers/OAuth/baiduapp.png)
@@ -15,6 +17,7 @@ authors: [Steve0x2a]
 ![Redirect URL Setting](/img/providers/OAuth/baidudomain.png)
 
 :::caution
+
 - Use the **domain** setting for your Casdoor domain; adding the full callback URL in the callback URL field often fails validation and breaks login.
 - Only one URL or domain can be added.
 :::
@@ -28,6 +31,7 @@ authors: [Steve0x2a]
 ![Baidu Provider](/img/providers/OAuth/baiduprovider.png)
 
 :::info Troubleshooting
+
 - If Baidu reports an incorrect redirect URL: add your domain in the correct place, then reset the Secret (Baidu may show an error but the secret updates after refresh). If it still fails, delete the app and create a new one, and set the domain first.
 - Baidu returns a masked username; Casdoor uses that masked value as the username.
 :::

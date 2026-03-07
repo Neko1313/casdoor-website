@@ -418,6 +418,16 @@
     "image": "/img/ecosystem/JS.png"
   },
   {
+    "title": "FastAPI",
+    "url": "https://casdoor.org/docs/integration/python/casbin-fastapi",
+    "description": "Decorator-based Casbin authorization and Casdoor OAuth2 authentication for FastAPI.",
+    "tags": [
+      "Integration",
+      "Python"
+    ],
+    "image": "/img/ecosystem/python.png"
+  },
+  {
     "title": "React Admin",
     "url": "https://marmelab.com/react-admin",
     "description": "The React Framework for B2B Apps",

@@ -5,6 +5,8 @@ keywords: [LinkedIn, OAuth]
 authors: [ErikQQY]
 ---
 
+<!-- markdownlint-disable MD029 -->
+
 1. Create an app at [LinkedIn Developers](https://www.linkedin.com/developers/apps/new).
 
 ![LinkedIn](/img/providers/OAuth/linkedin.png)
