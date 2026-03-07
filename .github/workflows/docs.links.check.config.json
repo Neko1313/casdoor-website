@@ -50,6 +50,15 @@
         },
         {
             "pattern": "^https://stackoverflow.com/"
+        },
+        {
+            "pattern": "^https://www.jumio.com/"
+        },
+        {
+            "pattern": "^https://gitee.com/oauth/"
+        },
+        {
+            "pattern": "^https://gitlab.com/-/profile/"
         }
     ]
 }
