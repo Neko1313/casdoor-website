@@ -67,9 +67,27 @@ async def me():
     return {"ok": True}
 ```
 
-:::caution
+:::danger Security: state parameter is not validated by default
 
-The `state` query parameter sent by Casdoor during the OAuth2 callback is accepted but **not validated** by default. This is a deliberate trade-off for stateless deployments. If your application requires CSRF protection, implement custom state validation before using this library in production.
+`CasdoorIntegration` accepts the `state` query parameter on the OAuth2 callback but **does not verify it**. Without state validation the callback endpoint has no CSRF protection: an attacker can craft a malicious authorization URL, trick a victim into opening it, and complete the callback in the victim's browser — potentially binding the wrong Casdoor account to the victim's session.
+
+**Do not deploy to production without addressing this.** Implement state validation before registering the router:
+
+```python
+import secrets
+from fastapi import Request, HTTPException
+
+# 1. On login redirect — generate and store state in the session
+state = secrets.token_urlsafe(32)
+request.session["oauth_state"] = state
+
+# 2. On callback — verify before proceeding
+incoming_state = request.query_params.get("state")
+if not secrets.compare_digest(incoming_state or "", request.session.pop("oauth_state", "")):
+    raise HTTPException(400, "Invalid state parameter")
+```
+
+Use a server-side session (e.g. `itsdangerous`-signed cookie or Redis) so the state cannot be forged by the client.
 
 :::
 
