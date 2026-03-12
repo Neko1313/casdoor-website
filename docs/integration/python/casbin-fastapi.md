@@ -5,7 +5,7 @@ keywords: [FastAPI, Casbin, Python, authorization, OAuth2]
 authors: [Neko1313]
 ---
 
-[casbin-fastapi-decorator](https://github.com/Neko1313/casbin-fastapi-decorator) is a community library that provides decorator-based Casbin authorization for FastAPI. Its **Casdoor extra** (`casbin-fastapi-decorator-casdoor`) combines Casdoor OAuth2 login with Casbin policy enforcement through Casdoor's remote enforce API — all without polluting your route signatures with dependency injection.
+[casbin-fastapi-decorator](https://github.com/Neko1313/casbin-fastapi-decorator) is a community library that provides decorator-based Casbin authorization for FastAPI. Its **Casdoor extra** (`casbin-fastapi-decorator-casdoor`) combines Casdoor OAuth2 login with Casbin policy enforcement through Casdoor's remote enforce API, while keeping route signatures clean and dependency-injection free.
 
 ## Step 1: Deploy Casdoor
 
@@ -20,20 +20,29 @@ In the Casdoor admin panel, create or open an application and configure:
 
 You will also need either an **Enforcer**, **Permission**, or **Model** identifier to pass as the enforce target.
 
+The application should start sign-in at `GET /login`; Casdoor itself should redirect back only to `GET /callback`.
+
 ## Step 3: Install the library
 
 ```bash
-pip install "casbin-fastapi-decorator[casdoor]"
+pip install "casbin-fastapi-decorator[casdoor]>=0.2.3"
 ```
 
 Requires Python ≥ 3.10.
+
+:::info Version guidance
+Use `casbin-fastapi-decorator` `0.2.3` or newer in production. Versions `0.2.2` and earlier accepted the OAuth2 `state` parameter on the callback but did not validate it, which left the login flow without CSRF protection. Version `0.2.3` adds a dedicated `GET /login` entry point, default `CookieStateManager`, and callback `state` verification.
+:::
 
 ## Step 4: Quick start with `CasdoorIntegration`
 
 `CasdoorIntegration` is a facade that wires together the Casdoor SDK, user provider, enforcer provider, and OAuth2 router in a single call.
 
 ```python
-from casbin_fastapi_decorator_casdoor import CasdoorIntegration, CasdoorEnforceTarget
+from casbin_fastapi_decorator_casdoor import (
+    CasdoorEnforceTarget,
+    CasdoorIntegration,
+)
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -50,7 +59,7 @@ casdoor = CasdoorIntegration(
     ),
 )
 
-# Register GET /callback and POST /logout routes
+# Register GET /login, GET /callback and POST /logout routes
 app.include_router(casdoor.router)
 
 # Create a pre-configured PermissionGuard
@@ -67,28 +76,31 @@ async def me():
     return {"ok": True}
 ```
 
-:::danger Security: state parameter is not validated by default
+Start the browser flow at `GET /login`. The router issues a one-time OAuth2 `state`, redirects to Casdoor, validates that `state` on the callback, exchanges the authorization code for tokens, and finally stores `access_token` and `refresh_token` cookies.
 
-`CasdoorIntegration` accepts the `state` query parameter on the OAuth2 callback but **does not verify it**. Without state validation the callback endpoint has no CSRF protection: an attacker can craft a malicious authorization URL, trick a victim into opening it, and complete the callback in the victim's browser — potentially binding the wrong Casdoor account to the victim's session.
-
-**Do not deploy to production without addressing this.** Implement state validation before registering the router:
+:::tip Custom state storage
+`0.2.3` uses `CookieStateManager` by default, which is sufficient for most deployments. If you need server-side or shared state storage, pass a custom `state_manager` implementing `CasdoorStateManager`.
 
 ```python
-import secrets
-from fastapi import Request, HTTPException
+from casbin_fastapi_decorator_casdoor import (
+    CasdoorStateManager,
+    CookieStateManager,
+    make_casdoor_router,
+)
 
-# 1. On login redirect — generate and store state in the session
-state = secrets.token_urlsafe(32)
-request.session["oauth_state"] = state
+state_manager: CasdoorStateManager = CookieStateManager(
+    cookie_name="casdoor_oauth_state",
+    cookie_secure=True,
+)
 
-# 2. On callback — verify before proceeding
-incoming_state = request.query_params.get("state")
-if not secrets.compare_digest(incoming_state or "", request.session.pop("oauth_state", "")):
-    raise HTTPException(400, "Invalid state parameter")
+# assuming existing_sdk = AsyncCasdoorSDK(...)
+router = make_casdoor_router(
+    sdk=existing_sdk,
+    state_manager=state_manager,
+)
 ```
 
-Use a server-side session (e.g. `itsdangerous`-signed cookie or Redis) so the state cannot be forged by the client.
-
+If you are upgrading from `0.2.2` or earlier, update your sign-in links to point at `/login` instead of constructing the Casdoor authorization URL manually.
 :::
 
 ## Step 5: Choose an enforce target
@@ -113,16 +125,17 @@ CasdoorEnforceTarget(permission_id="built-in/can-read-articles")
 
 ## Advanced usage (manual composition)
 
-For cases requiring a custom user factory, per-route enforce targets, or custom error handling, the components can be composed directly:
+For cases requiring a custom user factory, per-route enforce targets, custom `state` storage, or custom error handling, the components can be composed directly:
 
 ```python
 from casdoor import AsyncCasdoorSDK
 from fastapi import FastAPI, HTTPException
 from casbin_fastapi_decorator import PermissionGuard
 from casbin_fastapi_decorator_casdoor import (
-    CasdoorUserProvider,
-    CasdoorEnforcerProvider,
     CasdoorEnforceTarget,
+    CasdoorEnforcerProvider,
+    CasdoorUserProvider,
+    CookieStateManager,
     make_casdoor_router,
 )
 
@@ -138,7 +151,11 @@ sdk = AsyncCasdoorSDK(
 target = CasdoorEnforceTarget(permission_id="built-in/can-read")
 user_provider = CasdoorUserProvider(sdk=sdk)
 enforcer_provider = CasdoorEnforcerProvider(sdk=sdk, target=target)
-router = make_casdoor_router(sdk=sdk, redirect_after_login="/dashboard")
+router = make_casdoor_router(
+    sdk=sdk,
+    state_manager=CookieStateManager(cookie_secure=True),
+    redirect_after_login="/dashboard",
+)
 
 guard = PermissionGuard(
     user_provider=user_provider,
@@ -162,11 +179,13 @@ async def list_articles():
 | `CasdoorUserProvider` | Validates `access_token` and `refresh_token` cookies via the Casdoor SDK (JWT verification) |
 | `CasdoorEnforcerProvider` | Delegates policy checks to Casdoor's remote enforce API (`/api/enforce`) |
 | `CasdoorEnforceTarget` | Selects which Casdoor API identifier to use; values can be static or callables receiving the parsed JWT |
-| `CasdoorIntegration` | Facade combining all of the above with configurable cookie and redirect settings |
-| `make_casdoor_router` | Creates an `APIRouter` with `GET /callback` (OAuth2 code exchange) and `POST /logout` (cookie cleanup) |
+| `CookieStateManager` | Default one-time OAuth2 `state` storage and verification using an HttpOnly cookie |
+| `CasdoorIntegration` | Facade combining all of the above with configurable cookie, redirect, and `state` settings |
+| `make_casdoor_router` | Creates an `APIRouter` with `GET /login`, `GET /callback`, and `POST /logout` |
 
 ## More resources
 
 - [casbin-fastapi-decorator on GitHub](https://github.com/Neko1313/casbin-fastapi-decorator)
 - [casbin-fastapi-decorator on PyPI](https://pypi.org/project/casbin-fastapi-decorator/)
 - [casbin-fastapi-decorator-casdoor on PyPI](https://pypi.org/project/casbin-fastapi-decorator-casdoor/)
+- [casbin-fastapi-decorator changelog](https://github.com/Neko1313/casbin-fastapi-decorator/blob/main/CHANGELOG.md)
